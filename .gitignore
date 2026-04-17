@@ -1,0 +1,12 @@
+testing/
+training/
+checkpoints/
+eval_outputs/
+infer_outputs/
+logs/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
