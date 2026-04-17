@@ -92,7 +92,13 @@ def main() -> None:
     model.eval()
 
     metrics = evaluate(model, val_loader, device, num_classes=codec.num_classes, ignore_index=ignore_index)
-    logger.info("mIoU=%.4f fwIoU=%.4f", metrics["miou"], metrics["fw_iou"])
+    logger.info(
+        "mIoU=%.4f fwIoU=%.4f pixelAcc=%.4f meanClsAcc=%.4f",
+        metrics["miou"],
+        metrics["fw_iou"],
+        metrics["global_pixel_accuracy"],
+        metrics["mean_class_accuracy"],
+    )
     per = metrics["per_class_iou"]
     for i, name in enumerate(codec.class_names):
         logger.info("  %s IoU=%.4f", name, float(per[i]))
@@ -106,6 +112,8 @@ def main() -> None:
             {
                 "miou": float(metrics["miou"]),
                 "fw_iou": float(metrics["fw_iou"]),
+                "global_pixel_accuracy": float(metrics["global_pixel_accuracy"]),
+                "mean_class_accuracy": float(metrics["mean_class_accuracy"]),
                 "per_class_iou": {codec.class_names[i]: float(per[i]) for i in range(len(codec.class_names))},
             },
             f,

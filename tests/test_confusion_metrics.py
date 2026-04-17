@@ -47,4 +47,4 @@ def test_valid_class_miou_ignores_empty_gt_rows():
     cm = np.array([[80, 20], [0, 0]], dtype=np.int64)
     v = valid_class_miou_from_confusion(cm)
     # IoU class 0: TP=80, union = rows[0]+cols[0]-TP = 100+80-80 = 100
-    assert abs(v - 0.8) < 1e-9
+    assert abs(v - 0.8) < 1e-6

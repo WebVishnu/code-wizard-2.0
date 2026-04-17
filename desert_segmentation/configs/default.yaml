@@ -26,40 +26,42 @@ data:
   num_workers: 4
   # Prefer crops containing underrepresented classes (probability 0–1). Higher = more
   # training crops centered on rare-class pixels (see SegmentationDataset).
-  rare_class_crop_prob: 0.35
+  rare_class_crop_prob: 0.5
   # Oversample images that contain rare classes (scans train masks at startup).
-  weighted_sampler: false
+  weighted_sampler: true
   weighted_sampler_eps: 1.0e-6
   ignore_index: 255
 
+# segformer_b2: good speed/VRAM. For max quality on large GPUs use segformer_b5 + batch_size 1.
 model:
-  architecture: "deeplabv3plus"
+  architecture: "segformer_b2"
+  pretrained_id: "nvidia/segformer-b2-finetuned-ade-512-512"
   encoder_name: "resnet50"
   encoder_weights: "imagenet"
-  # Alternative: mit_b2 with deeplabv3plus if supported by SMP
-  # encoder_name: "mit_b2"
 
 train:
-  batch_size: 4
-  epochs: 40
-  lr: 0.0003
-  weight_decay: 0.0005
-  warmup_ratio: 0.08
+  batch_size: 2
+  val_batch_size: 2
+  epochs: 100
+  # Lower LR for stable ADE20K→custom finetuning; backbone gets backbone_lr_mult × lr.
+  lr: 0.00006
+  backbone_lr_mult: 0.1
+  weight_decay: 0.01
+  warmup_ratio: 0.1
   amp: true
   gradient_clip: 1.0
   seed: 42
   checkpoint_dir: "checkpoints"
   log_interval: 20
-  early_stop_patience: 12
+  early_stop_patience: 30
+  # Save best.pt by validation global pixel accuracy (fraction correct among labeled pixels).
+  # Alternatives: miou | mean_class_accuracy
+  checkpoint_metric: "global_pixel_accuracy"
 
 loss:
-  # ce | weighted_ce | ce_dice | focal_ce | focal_ce_dice
   name: "focal_ce_dice"
-  dice_weight: 0.5
-  # Used only for CE-based modes (ce, weighted_ce, ce_dice). Ignored for focal_ce / focal_ce_dice.
+  dice_weight: 0.45
   label_smoothing: 0.05
-  # Inverse log-frequency class weights; ratio clamped to [1/cap, cap] vs median. Typical cap 5–25;
-  # higher = stronger upweight for rare classes (watch for instability).
   class_weight_cap: 15.0
   focal_gamma: 2.0
 

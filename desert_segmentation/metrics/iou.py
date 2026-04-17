@@ -135,9 +135,13 @@ class IoUMetrics:
     def compute(self) -> Dict[str, float | np.ndarray]:
         cm = self._cm.cpu()
         iou, miou, fw_iou = confusion_to_iou(cm)
+        acc = confusion_to_accuracy_metrics(cm)
         return {
             "per_class_iou": iou.numpy(),
             "miou": miou,
             "fw_iou": fw_iou,
+            "global_pixel_accuracy": acc["global_pixel_accuracy"],
+            "mean_class_accuracy": acc["mean_class_accuracy"],
+            "per_class_recall": acc["per_class_recall"],
             "confusion": cm.numpy(),
         }

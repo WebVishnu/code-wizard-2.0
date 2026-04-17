@@ -159,7 +159,13 @@ def main() -> None:
         class_names=codec.class_names,
         max_train_batches=args.max_train_batches,
     )
-    logger.info("finished best_mIoU=%s path=%s", out["best_miou"], out["best_path"])
+    logger.info(
+        "finished best_score=%s (metric=%s) best_mIoU=%s path=%s",
+        out.get("best_score"),
+        cfg["train"].get("checkpoint_metric", "miou"),
+        out["best_miou"],
+        out["best_path"],
+    )
 
 
 if __name__ == "__main__":

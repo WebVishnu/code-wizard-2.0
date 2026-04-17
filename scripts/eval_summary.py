@@ -26,7 +26,6 @@ from desert_segmentation.data.dataset import SegmentationDataset
 from desert_segmentation.data.mask_encoding import build_codec_from_config
 from desert_segmentation.data.transforms import build_val_transforms
 from desert_segmentation.metrics.iou import (
-    confusion_to_accuracy_metrics,
     gt_pixel_counts,
     valid_class_miou_from_confusion,
 )
@@ -59,6 +58,8 @@ def run_from_checkpoint_only(ckpt_path: Path) -> int:
         print(f"  mIoU (stored):     {float(ckpt['miou']):.6f}")
     else:
         print("  mIoU:              (not stored in this file)")
+    if "global_pixel_accuracy" in ckpt:
+        print(f"  Pixel acc (stored): {float(ckpt['global_pixel_accuracy']):.6f}")
     names = ckpt.get("class_names")
     per = ckpt.get("per_class_iou")
     if per is not None and names is not None:
@@ -74,7 +75,7 @@ def run_from_checkpoint_only(ckpt_path: Path) -> int:
     print()
     print(
         "Note: fwIoU, global pixel accuracy, and mean class accuracy are not saved in "
-        "checkpoints. Run without --from-checkpoint-only to compute them on the val set."
+        "older checkpoints. Run without --from-checkpoint-only to compute them on the val set."
     )
     return 0
 
@@ -136,16 +137,15 @@ def run_full_eval(args: argparse.Namespace) -> int:
         desc="eval_summary",
     )
     cm = metrics["confusion"]
-    acc = confusion_to_accuracy_metrics(cm)
     miou_valid = float(valid_class_miou_from_confusion(cm))
     gt_counts = gt_pixel_counts(cm)
 
     miou = float(metrics["miou"])
     fw_iou = float(metrics["fw_iou"])
-    gpa = float(acc["global_pixel_accuracy"])
-    mca = float(acc["mean_class_accuracy"])
+    gpa = float(metrics["global_pixel_accuracy"])
+    mca = float(metrics["mean_class_accuracy"])
     per_iou = metrics["per_class_iou"]
-    per_rec = acc["per_class_recall"]
+    per_rec = metrics["per_class_recall"]
 
     def _rec_str(i: int) -> str:
         v = float(per_rec[i])
