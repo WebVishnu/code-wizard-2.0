@@ -32,27 +32,42 @@ logger = logging.getLogger(__name__)
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+
     parser.add_argument(
         "--config",
         type=str,
         default=str(ROOT / "desert_segmentation" / "configs" / "default.yaml"),
     )
+
     parser.add_argument("--root", type=str, default=None, help="Workspace root (defaults to repo root)")
     parser.add_argument("--epochs", type=int, default=None, help="Override epochs (smoke tests)")
     parser.add_argument("--max_train_batches", type=int, default=None, help="Stop each epoch after N batches (smoke tests)")
+
+    # ✅ NEW ARGUMENT
+    parser.add_argument(
+        "--checkpoint_dir",
+        type=str,
+        default=None,
+        help="Directory to save checkpoints (overrides config)"
+    )
+
     args = parser.parse_args()
 
     root = Path(args.root or ROOT).resolve()
     cfg = load_config(args.config, root=root)
+
     if args.epochs is not None:
         cfg["train"]["epochs"] = int(args.epochs)
+
     setup_logging()
     set_seed(int(cfg["train"]["seed"]))
 
     paths = get_paths(cfg)
+
     raw_ids = cfg["data"]["raw_ids"]
     names = tuple(cfg["data"]["class_names"])
     codec = build_codec_from_config(raw_ids, names)
+
     ignore_index = int(cfg["data"].get("ignore_index", 255))
     crop_size = int(cfg["data"]["crop_size"])
 
@@ -61,6 +76,7 @@ def main() -> None:
         strong=bool(cfg.get("augmentation", {}).get("strong", True)),
         ignore_index=ignore_index,
     )
+
     val_tf = build_val_transforms(crop_size=crop_size, ignore_index=ignore_index)
 
     train_ds = SegmentationDataset(
@@ -74,6 +90,7 @@ def main() -> None:
         ignore_index=ignore_index,
         seed=int(cfg["train"]["seed"]),
     )
+
     val_ds = SegmentationDataset(
         paths["val_images"],
         paths["val_masks"],
@@ -104,13 +121,16 @@ def main() -> None:
     freq = estimate_pixel_frequencies(paths["train_masks"], codec, max_files=None)
     cap = float(cfg.get("loss", {}).get("class_weight_cap", 15.0))
     class_w = compute_class_weights_from_freq(freq, cap=cap).to(device)
+
     logger.info("class pixel frequencies (train masks): %s", freq.tolist())
 
     use_weighted_sampler = bool(cfg.get("data", {}).get("weighted_sampler", False))
     sampler: WeightedRandomSampler | None = None
+
     if use_weighted_sampler:
         eps = float(cfg.get("data", {}).get("weighted_sampler_eps", 1e-6))
         logger.info("computing per-image sampling weights (scanning train masks)...")
+
         sample_w = per_image_sampling_weights(
             paths["train_masks"],
             train_ds.image_names,
@@ -118,6 +138,7 @@ def main() -> None:
             freq,
             eps=eps,
         )
+
         sampler = WeightedRandomSampler(
             sample_w,
             num_samples=len(train_ds),
@@ -142,9 +163,15 @@ def main() -> None:
         ignore_index=ignore_index,
     ).to(device)
 
-    ckpt_dir = Path(cfg["train"]["checkpoint_dir"])
-    if not ckpt_dir.is_absolute():
-        ckpt_dir = root / ckpt_dir
+    # ✅ FLEXIBLE CHECKPOINT HANDLING
+    if args.checkpoint_dir:
+        ckpt_dir = Path(args.checkpoint_dir)
+    else:
+        ckpt_dir = Path(cfg["train"]["checkpoint_dir"])
+        if not ckpt_dir.is_absolute():
+            ckpt_dir = root / ckpt_dir
+
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
 
     out = train(
         model,
@@ -159,6 +186,7 @@ def main() -> None:
         class_names=codec.class_names,
         max_train_batches=args.max_train_batches,
     )
+
     logger.info(
         "finished best_score=%s (metric=%s) best_mIoU=%s path=%s",
         out.get("best_score"),
