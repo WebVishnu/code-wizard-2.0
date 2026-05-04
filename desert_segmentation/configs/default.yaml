@@ -3,11 +3,11 @@ root: "."
 
 # ── DATA ────────────────────────────────────────────────────────────────────
 data:
-  train_images: "training/train/Color_Images"
-  train_masks:  "training/train/Segmentation"
-  val_images:   "training/val/Color_Images"
-  val_masks:    "training/val/Segmentation"
-  test_images:  "testing/Color_Images"
+  train_images: "training-dataset/train/Color_Images"
+  train_masks:  "training-dataset/train/Segmentation"
+  val_images:   "training-dataset/val/Color_Images"
+  val_masks:    "training-dataset/val/Segmentation"
+  test_images:  "testing-dataset/Color_Images"
 
   raw_ids: [100, 200, 300, 500, 550, 600, 700, 800, 7100, 10000]
 
