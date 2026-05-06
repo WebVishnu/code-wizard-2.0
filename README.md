@@ -1,13 +1,11 @@
 ---
-title: {{title}}
-emoji: {{emoji}}
-colorFrom: {{colorFrom}}
-colorTo: {{colorTo}}
-sdk: {{sdk}}
-sdk_version: "{{sdkVersion}}"
-{{#pythonVersion}}
-python_version: "{{pythonVersion}}"
-{{/pythonVersion}}
+title: desert-segmentation
+emoji: 🚀
+colorFrom: blue
+colorTo: green
+sdk: gradio
+sdk_version: 4.12.0
+python_version: 3.11.9
 app_file: app.py
 pinned: false
 ---
