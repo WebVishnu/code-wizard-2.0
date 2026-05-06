@@ -1,6 +1,5 @@
 testing/
 training/
-checkpoints/
 eval_outputs/
 infer_outputs/
 logs/
